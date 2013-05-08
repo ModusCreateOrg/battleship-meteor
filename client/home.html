@@ -1,0 +1,71 @@
+
+<template name="index">
+    <div class="container-fluid" id="home">
+        <div class="row-fluid">
+            <div class="span3">
+            {{> players }}
+            </div>
+            <div class="span9">
+                {{> main }}
+            </div>
+        </div>
+    </div>
+</template>
+
+<template name="players">
+    <div class="well sidebar-nav">
+        <ul class="nav nav-list">
+            <li class="nav-header">Online players</li>
+            {{#each available_players}}
+            <li>
+                <a href="#">
+                    <img src="{{avatar_url}}" class="img-rounded" style="width:20px" /> 
+                    {{displayName}}
+                </a>
+            </li>
+            {{else}}
+            <li>We don't have players right now, invite your friends!</li>
+            {{/each}}
+            <li class="nav-header">Playing</li>
+            {{#each unavailable_players}}
+            <li>
+                <a href="#">
+                    <img src="{{avatar_url}}" class="img-rounded" style="width:20px" /> 
+                    {{displayName}}
+                </a>
+            </li>
+            {{else}}
+            <li>Select an available player and start playing!!</li>
+            {{/each}}
+        </ul>
+    </div>
+</template>
+
+<template name="main">
+    <div class="hero-unit">
+        <h1>Welcome!</h1>
+        <p>Enemies are about to attack our contry! we need your help to defeat this threat. Your mission will be to decide where we should fire our missils and how we should defend. Are you ready for the action?.</p>
+
+        {{#if currentUser}}
+        <p><a href="#" id="play_btn" class="btn btn-primary btn-large">Select a Player and Play!</a></p>
+        {{else}}
+        <p><a href="#" id="login_btn" class="btn btn-primary btn-large">Login now!</a></p>
+        {{/if}}
+    </div>
+    <div class="row-fluid">
+        <div class="span4">
+            <h2>Login</h2>
+            <p>First you need to login with Github in order to defend our contry.</p>
+            <p>We will be adding more services in the near future.</p>
+        </div>
+        <div class="span4">
+            <h2>Select Player</h2>
+            <p>Select an available player from the list at the left, if you are the only one in the list just invite a friend.</p>
+        </div>
+        <div class="span4">
+            <h2>Play the Game</h2>
+            <p>You need to place all the ships into your side, just drag and drop the ships into the water.</p>
+            <p>When your opponen is ready you can start shoting to the other side of the board by clicking in any square.</p>
+        </div>
+    </div>
+</template>

@@ -1,0 +1,14 @@
+html,body{
+    height:100%;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+}
+.dropdown-toggle{
+    padding-top:10px !important;
+    padding-bottom:5px !important;
+}
+
+.board{
+    background-color:#07121e;
+}
