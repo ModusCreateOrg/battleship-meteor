@@ -1,4 +1,8 @@
 
+
+Meteor.subscribe('players');
+Meteor.subscribe('game');
+
 Template.user_loggedout.events({
     'click #login' : loginFn
 });
@@ -18,7 +22,7 @@ Template.user_loggedin.events({
                 var user = Players.findOne({login:username});
                 Players.remove(user._id);
             }
-        });  
+        });
     }
 });
 
@@ -46,7 +50,12 @@ function loginFn(){
             
             if(!user){ //insert the player only once
                 profile.playing = false;
-                Players.insert(profile);
+                profile.x = 0;
+                profile.y = 0;
+                profile.rotation = 0;
+                var id = Players.insert(profile);
+            }else{
+                Players.update(user._id,{$set:{playing:false}});
             }
         }
     });

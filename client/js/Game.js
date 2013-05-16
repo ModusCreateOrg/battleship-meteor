@@ -8,6 +8,12 @@ Ext.define('Battleship.Game',{
     nextBullet  : 0,
 
     constructor : function(){
+        var profile = Meteor.user().profile,
+            user = Players.findOne({login:profile.login});
+
+        this.currentPlayer = user;
+        Players.update(user._id,{$set:{playing:true}});
+
         this.callParent();
 
         Ext.get('header').enableDisplayMode().hide();
@@ -76,13 +82,51 @@ Ext.define('Battleship.Game',{
 
         me.stage.removeChild(me.messageField);
 
-        me.player1 = Ext.create('Battleship.Ship',{
-            image : Battleship.ContentManager.get('ship1')
+        me.player = Ext.create('Battleship.Ship',{
+            image : Battleship.ContentManager.get('ship1'),
+            avatar: this.currentPlayer.avatar_url,
+            playerId : this.currentPlayer._id
         });
-        me.player1.x = me.canvas.width / 2;
-        me.player1.y = me.canvas.height / 2;
+        me.player.x = me.canvas.width / 2;
+        me.player.y = me.canvas.height / 2;
 
-        me.stage.addChild(me.player1);
+        me.stage.addChild(me.player);
+
+        //sync the current players
+        var playing = Players.find({playing:true});
+        me.players = {};
+
+        playing.observeChanges({
+            added   : function(id,fields){
+                if(id !== me.currentPlayer._id && me.players[id] == null){
+                    var p = Players.findOne({_id:id}),
+                        ship = Ext.create('Battleship.Ship',{
+                        image    : Battleship.ContentManager.get('ship1'),
+                        avatar   : p.avatar_url,
+                        playerId : id
+                    });
+                    ship.x = me.canvas.width / 2;
+                    ship.y = me.canvas.height / 2;
+
+                    me.stage.addChild(ship);
+
+                    me.players[id] = ship;
+                }
+            },
+            changed : function(id,p){
+                if(id !== me.currentPlayer._id){
+                    var ship = me.players[id];
+
+                    ship.x = p.x || ship.x;
+                    ship.y = p.y || ship.y;
+                    ship.rotation = p.rotation || ship.rotation;
+                }
+            },
+            removed  : function(id){
+                var ship = me.players[id];
+                me.stage.removeChild(ship);
+            }
+        });
 
         //start game timer   
         if (!createjs.Ticker.hasEventListener("tick")) { 
@@ -90,6 +134,8 @@ Ext.define('Battleship.Game',{
                 me.tick();
             });
         } 
+
+        this.canvas.onclick = null;
     },
 
     tick    : function() {
@@ -97,7 +143,7 @@ Ext.define('Battleship.Game',{
 
         //handle firing
         if(me.nextBullet <= 0) {
-            if(me.player1.alive && me.player1.shootHeld){
+            if(me.player.alive && me.player.shootHeld){
                 me.nextBullet = Battleship.Config.BULLET_TIME;
                 //fireBullet();
             }
@@ -106,16 +152,17 @@ Ext.define('Battleship.Game',{
         }
 
         //handle turning
-        if(me.player1.alive && me.player1.lfHeld){
-            me.player1.rotation -= Battleship.Config.TURN_FACTOR;
-        } else if(me.player1.alive && me.player1.rtHeld) {
-            me.player1.rotation += Battleship.Config.TURN_FACTOR;
+        if(me.player.alive && me.player.lfHeld){
+            me.player.rotation -= Battleship.Config.TURN_FACTOR;
+        } else if(me.player.alive && me.player.rtHeld) {
+            me.player.rotation += Battleship.Config.TURN_FACTOR;
         }
 
         //handle thrust
-        if(me.player1.alive && me.player1.fwdHeld){
-            me.player1.accelerate();
+        if(me.player.alive && me.player.fwdHeld){
+            me.player.accelerate();
         }
+
 /*
         //handle new spaceRocks
         if(nextRock <= 0) {
@@ -225,7 +272,7 @@ Ext.define('Battleship.Game',{
         }
 */
         //call sub ticks
-        me.player1.tick();
+        me.player.tick();
         me.stage.update();
     },
 
@@ -233,13 +280,13 @@ Ext.define('Battleship.Game',{
         //cross browser issues exist
         if(!e){ var e = window.event; }
         switch(e.keyCode) {
-            case Battleship.Config.KEYCODE_SPACE: this.player1.shootHeld = true; return false;
+            case Battleship.Config.KEYCODE_SPACE: this.player.shootHeld = true; return false;
             case Battleship.Config.KEYCODE_A:
-            case Battleship.Config.KEYCODE_LEFT:  this.player1.lfHeld = true; return false;
+            case Battleship.Config.KEYCODE_LEFT:  this.player.lfHeld = true; return false;
             case Battleship.Config.KEYCODE_D:
-            case Battleship.Config.KEYCODE_RIGHT: this.player1.rtHeld = true; return false;
+            case Battleship.Config.KEYCODE_RIGHT: this.player.rtHeld = true; return false;
             case Battleship.Config.KEYCODE_W:
-            case Battleship.Config.KEYCODE_UP:    this.player1.fwdHeld = true; return false;
+            case Battleship.Config.KEYCODE_UP:    this.player.fwdHeld = true; return false;
             //case KEYCODE_ENTER:  if(canvas.onclick == handleClick){ handleClick(); }return false;
         }
     },
@@ -248,13 +295,13 @@ Ext.define('Battleship.Game',{
         //cross browser issues exist
         if(!e){ var e = window.event; }
         switch(e.keyCode) {
-            case Battleship.Config.KEYCODE_SPACE: this.player1.shootHeld = false; break;
+            case Battleship.Config.KEYCODE_SPACE: this.player.shootHeld = false; break;
             case Battleship.Config.KEYCODE_A:
-            case Battleship.Config.KEYCODE_LEFT:  this.player1.lfHeld = false; break;
+            case Battleship.Config.KEYCODE_LEFT:  this.player.lfHeld = false; break;
             case Battleship.Config.KEYCODE_D:
-            case Battleship.Config.KEYCODE_RIGHT: this.player1.rtHeld = false; break;
+            case Battleship.Config.KEYCODE_RIGHT: this.player.rtHeld = false; break;
             case Battleship.Config.KEYCODE_W:
-            case Battleship.Config.KEYCODE_UP:    this.player1.fwdHeld = false; break;
+            case Battleship.Config.KEYCODE_UP:    this.player.fwdHeld = false; break;
         }
     }
 });

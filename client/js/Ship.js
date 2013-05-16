@@ -23,16 +23,39 @@ Ext.define('Battleship.Ship',{
         me.initialize();
 
         this.body = new createjs.Bitmap(this.image);
+        this.body.x = -39;
+
+        this.avatar = new createjs.Bitmap(this.avatar);
+        this.avatar.scaleX = 0.3;
+        this.avatar.scaleY = 0.3;
+        this.avatar.x = -10;
+        this.avatar.y = -20;
+
+        this.addChild(this.avatar);
         this.addChild(this.body);
+        
+
+        var profile = Meteor.user().profile,
+            user = Players.findOne({login:profile.login});
+        this.currentPlayerId = user._id;
     },
 
     tick       : function(){
         this.x += this.vX;
         this.y += this.vY;
+
+        //only update for the current user
+        if(this.currentPlayerId === this.playerId){
+            Players.update(this.playerId,{$set:{
+                x : this.x,
+                y : this.y,
+                rotation : this.rotation
+            }});
+        }
     },
 
     accelerate : function(){
-        this.thrust += this.thrust + 0.6;
+        this.thrust += this.thrust + 0.5;
 
         if(this.thrust >= this.MAX_THRUST) {
             this.thrust = this.MAX_THRUST;
